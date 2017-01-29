@@ -20,8 +20,17 @@ BOOL SpawnAndAttachProcess(LPTSTR lpApplicationName) {
   return TRUE;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+  if (argc != 2) {
+    printf("Wrong argument count.\nPlease give path to program to debug.");
+    return 1;
+  }
+
+  if (!SpawnAndAttachProcess(argv[1])) {
+    return 1;
+  }
+
   std::map<DWORD, HANDLE> processes;
   std::map<DWORD, HANDLE> threads;
 
@@ -29,12 +38,27 @@ int main()
     DEBUG_EVENT debug_ev;
     DWORD cont_status = DBG_CONTINUE;
 
+
     if (!WaitForDebugEvent(&debug_ev, INFINITE)) {
       break;
     }
 
     switch (debug_ev.dwDebugEventCode) {
-      // obsłuż poszczególne zdarzenia.
+      case CREATE_PROCESS_DEBUG_EVENT: 
+        printf("CREATE_PROCESS, id: %u, base address: %p, start address: %p\n",
+               debug_ev.dwProcessId,
+               debug_ev.u.CreateProcessInfo.lpBaseOfImage,
+               debug_ev.u.CreateProcessInfo.lpStartAddress);
+
+        if (debug_ev.u.CreateProcessInfo.hFile != NULL) {
+          CloseHandle(debug_ev.u.CreateProcessInfo.hFile);
+        }
+
+        processes[debug_ev.dwProcessId] = debug_ev.u.CreateProcessInfo.hProcess;
+        threads[debug_ev.dwThreadId] = debug_ev.u.CreateProcessInfo.hThread;
+        break;
+      case CREATE_THREAD_DEBUG_EVENT:
+        break;
     }
 
     ContinueDebugEvent(debug_ev.dwProcessId,
