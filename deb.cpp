@@ -58,6 +58,10 @@ int main(int argc, char **argv)
         threads[debug_ev.dwThreadId] = debug_ev.u.CreateProcessInfo.hThread;
         break;
       case CREATE_THREAD_DEBUG_EVENT:
+        printf("CREATE_THREAD, tid: %u, TLS: %p, start address: %p\n",
+            debug_ev.u.CreateThread.lpThreadLocalBase,
+            debug_ev.u.CreateThread.lpStartAddress);
+        threads[debug_ev.dwThreadId] = debug_ev.u.CreateThread.hThread;
         break;
     }
 
